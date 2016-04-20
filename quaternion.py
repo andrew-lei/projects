@@ -1,9 +1,30 @@
 #! /usr/bin/env python
 
 from math import sqrt, sin, cos, pi
-import json
-import cgi
-import sys
+#from copy import deepcopy
+import pygame
+import pygame.gfxdraw
+
+pygame.init()
+
+# Define the colors we will use in RGB format
+BLACK = (  0,   0,   0)
+WHITE = (255, 255, 255)
+BLUE =  (  0,   0, 255)
+GREEN = (  0, 255,   0)
+RED =   (255,   0,   0)
+YELLOW = (255, 255, 0)
+MAGENTA = (255, 0, 255)
+CYAN = (0, 255, 255)
+
+# Set the height and width of the screen
+size = [500, 500]
+centre = [size[0]/2, size[1]/2]
+screen = pygame.display.set_mode(size)
+
+#Loop until the user clicks the close button.
+done = False
+clock = pygame.time.Clock()
 
 class Quaternion:
   def __init__(self, realpart, (ipart, jpart, kpart), normalise = False):
@@ -90,7 +111,7 @@ class Node(Quaternion):
 
   def proj(self, projquat):
     rot = projquat.findrot( Node( (0,0,1) ) )
-    coord = ( rot * self * rot.conj() ).getvec()[:2]
+    coord = ( rot * self * rot.conj() ).getvec()
     return coord
   
   #rotates node
@@ -106,9 +127,11 @@ class Node(Quaternion):
     self.k += location.k
 
 class Shape:
-  def __init__(self, nodeList, graphOfNodes):
+  def __init__(self, nodeList, graphOfNodes, facesList = [], invisible = False):
     self.nodes = nodeList
     self.graph = graphOfNodes
+    self.faces = facesList
+    self.invis = invisible
   
   #rotates shape
   def rotate(self, rotquat, axispos = Node( (0,0,0) )):
@@ -122,16 +145,20 @@ class Shape:
     return coords
 
   def draw(self, projquat, scale):
-    coords = [[250 + scale*x, 250 + scale*y] for (x, y) in self.proj(projquat)]
-    edges = []
+    coords = [(centre[0] + scale*x, centre[1] + scale*y, z) for (x, y, z) in self.proj(projquat)]
+    projFaces = sorted( self.faces, key = lambda face: min( [ coords[ pt ][2] for pt in face[0] ] ) )
     for edge in self.graph:
-      edges += [ [ coords[edge[0]], coords[edge[1]] ] ]
-    return edges
+      pygame.draw.aaline(screen, BLACK, coords[edge[0]][:2], coords[edge[1]][:2])
+    for face in projFaces:
+      pygame.gfxdraw.filled_polygon(screen, [coords[pt][:2] for pt in face[0] ], face[1])
+      pygame.gfxdraw.aapolygon(screen, [coords[pt][:2] for pt in face[0] ], BLACK)
+    
 
   def translate(self, location):
     for node in self.nodes:
       node.translate(location)
-  
+
+
 class Environment:
   def __init__(self, axis, scalefact):
     self.ax = Node(axis, True)
@@ -142,56 +169,15 @@ class Environment:
     self.shapes += [someShape]
 
   def draw(self):
-    result = {}
-    result['shapes'] = str([ shape.draw(self.ax, self.sc) for shape in self.shapes ])
-    result['axis'] = str(self.ax)
-    result['success'] = True
-    
-    sys.stdout.write('Content-Type: application/json')
-    sys.stdout.write('\n')
-    sys.stdout.write('\n')
-    
-    sys.stdout.write(json.dumps(result,indent=1))
-    sys.stdout.write('\n')
-    
-    sys.stdout.close()
+    for shape in self.shapes:
+      if not shape.invis: shape.draw(self.ax, self.sc)
+      
+  def rotate(self, rotquat):
+    self.ax.rotate(rotquat)
 
 def torad( degrees ): return degrees * pi/180
 
 
-fs = cgi.FieldStorage()
-
-orbitAxisAngle = ( torad( float(fs.getvalue('orbitPolar')) ) , torad( float(fs.getvalue('orbitAzimuth')) ))
-orbitAxis = ( sin(orbitAxisAngle[0]) * cos(orbitAxisAngle[1]), 
-             sin(orbitAxisAngle[0]) * sin(orbitAxisAngle[1]), cos(orbitAxisAngle[0]) )
-
-spinAxisAngle = ( torad( float(fs.getvalue('spinPolar')) ) , torad( float(fs.getvalue('spinAzimuth')) ) )
-spinAxis = ( sin(spinAxisAngle[0]) * cos(spinAxisAngle[1]), 
-            sin(spinAxisAngle[0]) * sin(spinAxisAngle[1]), cos(spinAxisAngle[0]) )
-
-viewAxisAngle = ( torad( float(fs.getvalue('viewPolar')) ) , torad( float(fs.getvalue('viewAzimuth')) ) )
-viewAxis = ( sin(viewAxisAngle[0]) * cos(viewAxisAngle[1]), 
-            sin(viewAxisAngle[0]) * sin(viewAxisAngle[1]), cos(viewAxisAngle[0]) )
-
-
-orbitAngle = torad( float( fs.getvalue('orbitAngle') ) )
-spinAngle = torad( float( fs.getvalue('spinAngle') ) )
-zoom = float( fs.getvalue('zoom') )
-
-#sys.stdout.write("Content-Type: application/json")
-
-#sys.stdout.write("\n")
-#sys.stdout.write("\n")
-
-
-#result = {}
-#result['success'] = True
-#result['data'] = str( orbitAxisAngle )
-
-#sys.stdout.write(json.dumps(result,indent=1))
-#sys.stdout.write("\n")
-
-#sys.stdout.close()
 
 
 myquats = [ Node( (-1, -1, -1) ),
@@ -203,23 +189,71 @@ myquats = [ Node( (-1, -1, -1) ),
           Node( (1, 1, -1) ),
           Node( (1, 1, 1) )]
 
-cube = Shape(myquats, [ (0, 1), (0, 2), (0, 4), (1, 3), (1, 5), (2, 3), (2, 6), (3, 7), (4, 5), (4, 6), (5, 7), (6, 7)])
+cube = Shape(myquats, [ (0, 1), (0, 2), (0, 4), (1, 3), (1, 5), (2, 3), (2, 6), (3, 7), (4, 5), (4, 6), (5, 7), (6, 7)],
+             [ ( [ 0, 2, 6, 4 ] , BLUE), ( [ 3, 1, 5, 7 ] , YELLOW ), ( [ 0, 1, 3, 2 ] , GREEN ), 
+              ( [ 4, 5, 7, 6 ] , MAGENTA ), ( [ 0, 1, 5, 4 ] , RED ), ( [ 2, 3, 7, 6 ] , CYAN ) ])
 cube.translate( Node( (-3, 1, 3) ) )
 
-centreToOrigin = Shape( [Node( (0, 0, 0) ), Node( (-3, 1, 3) )], [ (0, 1) ] )
+rotvec = (1,1,1)
+myangle = torad(1)
 
-myEnv = Environment(viewAxis, zoom)
+centreToOrigin = Shape( [Node( (0, 0, 0) ), Node( (-3, 1, 3) )], [ (0, 1) ], invisible = True )
+rotaxis = Shape( [Node( (-20, -20, -20) ), Node( (20, 20, 20) )], [ (0, 1) ] )
+
+#myEnv = Environment((0.5,1,0.5), 30)
+myEnv = Environment((0,1,-1), 30)
 myEnv.addShape(cube)
 myEnv.addShape(centreToOrigin)
+#myEnv.addShape(rotaxis)
 
-rotation = Quaternion(0, orbitAxis, True)
-rotation.setangle( orbitAngle )
+#myEnvRotAxis = (1, 0, 0)
+#myEnvRotAngle = torad(0.05)
+#myEnvRotQuat = Quaternion(0, myEnvRotAxis, True)
+#myEnvRotQuat.setangle( myEnvRotAngle )
 
-rotation2 = Quaternion(0, spinAxis, True)
-rotation2.setangle( spinAngle )
 
-myEnv.shapes[0].rotate(rotation)
-myEnv.shapes[1].rotate(rotation)
-myEnv.shapes[0].rotate(rotation2, myEnv.shapes[1].nodes[1])
+#projection = Quaternion(0, rotvec, True)
 
-myEnv.draw()
+rotation = Quaternion(0, rotvec, True)
+rotation.setangle( myangle )
+
+rotvec2 = (1, 1, 1)
+myangle2 = torad(3)
+rotation2 = Quaternion(0, rotvec2, True)
+rotation2.setangle( myangle2 )
+
+index = 0
+while not done:
+ 
+    # This limits the while loop to a max of 10 times per second.
+    # Leave this out and we will use all CPU we can.
+    clock.tick(100)
+     
+    for event in pygame.event.get(): # User did something
+        if event.type == pygame.QUIT: # If user clicked close
+            done=True # Flag that we are done so we exit this loop
+    
+    screen.fill(WHITE)
+    myEnv.draw()
+    #for i in myEnv.shapes[0].nodes: print i
+    pygame.display.flip()
+    #pygame.image.save(screen, str(index).zfill(6)+'.png')
+    myEnv.shapes[0].rotate(rotation)
+    myEnv.shapes[1].rotate(rotation)
+    #print myEnv.shapes[1].nodes[1]
+    myEnv.shapes[0].rotate(rotation2, myEnv.shapes[1].nodes[1] )
+    #myEnv.rotate( myEnvRotQuat )
+    index += 1
+    
+pygame.quit()
+
+#for quat in myquats: 
+  #print '------'
+  #print rotquat * quat * rotquat.conj()
+
+  
+#for myproj in myprojs: print myproj
+
+#print '-----'
+
+#for i in cube.proj(projection): print i
