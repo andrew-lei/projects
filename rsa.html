@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>RSA</title>
+    <meta property="og:url" content="http://www.andrewlei.org/rsa.html" />
+    <meta property="og:description" content="A demonstration of how RSA works." />
+    <meta property='og:image' content='http://www.andrewlei.org/picture.jpg'/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+  <!-- Latest compiled and minified CSS --> <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"> <!-- Optional theme --> <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous"> <!-- Latest compiled and minified JavaScript --> <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+  </head>
+    <body>
+      <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="http://www.andrewlei.org">Home</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+          <ul class="nav navbar-nav">
+            <li><a href="about.html">About</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Software <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+                <li><a href="plot.html">Finite Element Method Program</a></li>
+                <li><a href="quatdraw.html">Quaternions</a></li>
+                <li class='active'><a href="rsa.html">RSA demonstration</a></li>
+              </ul>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+
+    <br /><br /><br />
+
+
+      <div class="container container-fluid">
+        <center>
+          <h2>RSA</h2>
+        </center>
+        The following is a demonstration of how RSA works. Implemented entirely in
+        Javascript; view source to see code, I will have an explanation at a later date.
+        Do not use this if you need to actually encrypt something; this is purely for
+        educational purposes, to demonstrate how public key encryption works.
+        <br/><br/>
+        <button type="button" class="btn btn-default" id="genkeys">Generate Keys</button><br/>
+        <div class="input-group col-lg-5">
+        <span class="input-group-addon" size = 20>Public Key: </span>
+        <input type="text" class="form-control" aria-describedby="basic-addon1" id = 'pub'>
+        <span class="input-group-addon" size = 20>Private Key: </span>
+        <input type="text" class="form-control" aria-describedby="basic-addon1" id = 'priv'>
+        </div><br/>
+        <div class="input-group col-lg-5">
+        <span class="input-group-addon" size = 20>Input</span>
+        <textarea rows = 4 columns = 50 id = 'input'>hello world</textarea>
+        </div>
+        <button type="button" class="btn btn-default" id="encrypt">Encrypt</button><br/><br/>
+        <div class="input-group col-lg-5">
+        <span class="input-group-addon" size = 20>Encrypted Message: </span>
+        <textarea rows = 4 columns = 50 id = 'input2'></textarea>
+        </div>
+        <button type="button" class="btn btn-default" id="decrypt">Decrypt</button><br/><br/>
+        <div class="input-group col-lg-5">
+        <div class="panel panel-default">
+          <div class="panel-heading">Decrypted Message:</div>
+          <div class="panel-body" id='decrypted'></div>
+        </div>
+        </div>
+        <script src='rsa.js'></script>
+      </div>
+
+  <!-- Start of StatCounter Code for Default Guide -->
+  <script type="text/javascript">
+  var sc_project=10638828;
+  var sc_invisible=1;
+  var sc_security="ca525bb7";
+  var scJsHost = (("https:" == document.location.protocol) ?
+  "https://secure." : "http://www.");
+  document.write("<sc"+"ript type='text/javascript' src='" +
+  scJsHost+
+  "statcounter.com/counter/counter.js'></"+"script>");
+  </script>
+  <noscript><div class="statcounter"><a title="shopify
+  analytics tool" href="http://statcounter.com/shopify/"
+  target="_blank"><img class="statcounter"
+  src="http://c.statcounter.com/10638828/0/ca525bb7/1/"
+  alt="shopify analytics tool"></a></div></noscript>
+  <!-- End of StatCounter Code for Default Guide -->
+    </body>
+</html>
