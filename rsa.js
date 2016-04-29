@@ -126,6 +126,9 @@ function extEuclid(num, mod){
     return old_s + mod;
   }
 }
+function encodeHTML(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+}
 
 $(function()
 {
@@ -156,6 +159,6 @@ $(function()
     var privatekey = parseInt(document.getElementById('priv').value);
     var message = document.getElementById('input2').value;
     var decryptedMessage = encode(message, privatekey, publickey, true);
-    document.getElementById('decrypted').innerHTML = decryptedMessage;
+    document.getElementById('decrypted').innerHTML = encodeHTML(decryptedMessage);
   });
 });
