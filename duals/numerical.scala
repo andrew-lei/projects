@@ -169,7 +169,8 @@ object Dual {
     val tau = t * math.exp(-x.real * x.real - 1.26551223 + 1.00002368 * t + 0.37409196 * t * t + 0.09678418 * math.pow(t, 3) -
               0.18628806 * math.pow(t,4) + 0.27886807 * math.pow(t,5) - 1.13520398 * math.pow(t,6) + 1.48851587 * math.pow(t, 7)
               -0.82215223 * math.pow(t,8) + 0.17087277 * math.pow(t,9) )
-    if (x.real >= 0.0) new Dual(1 - tau, 2.0 / math.sqrt(math.Pi) * math.exp(-x.real * x.real) ) else new Dual(tau - 1, 2.0 / math.sqrt(math.Pi) * math.exp(-x.real * x.real) )
+    if (x.real >= 0.0) new Dual(1 - tau, 2.0 / math.sqrt(math.Pi) * math.exp(-x.real * x.real) * x.inf )
+    else new Dual(tau - 1, 2.0 / math.sqrt(math.Pi) * math.exp(-x.real * x.real) * x.inf )
   }
 
   //diff eq functions
