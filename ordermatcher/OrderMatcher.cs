@@ -17,7 +17,30 @@ using Nancy.ModelBinding;
 namespace OrderMatcher {
   public class Order {
     public ObjectId Id { get; set; }
-    public string Security { get; set; }
+
+    private string security;
+    public string Security {
+      get {
+        return security;
+      }
+      set {
+        if( Regex.IsMatch(value, @"^[a-zA-Z]+$") ) {
+          if( value.Length > 5 ) {
+            throw new ArgumentException("value", "must have five letters or fewer");
+          }
+          security = value.ToUpper();
+        }
+        else if( Regex.IsMatch(value, @"^[a-zA-Z.]+$") ) {
+          if( value.Length > 6 ) {
+            throw new ArgumentException("value", "must have five letters or fewer");
+          }
+          security = value.ToUpper();
+        }
+        else {
+          throw new ArgumentException("value", "has invalid characters");
+        }
+      }
+    }
 
     private string side;
     public string Side {
