@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Order Matcher</title>
+    <meta property="og:url" content="http://www.andrewlei.org/ordermatcher.html" />
+    <meta property="og:description" content="An order-matching application written in C#/Mono with Nancy and MongoDB" />
+    <meta property='og:image' content='http://www.andrewlei.org/picture.jpg'/>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+
+  <!-- Latest compiled and minified CSS --> <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous"> <!-- Optional theme --> <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap-theme.min.css" integrity="sha384-fLW2N01lMqjakBkx3l/M9EahuwpSfeNvV63J5ezn3uZzapT0u7EYsXMjQV+0En5r" crossorigin="anonymous"> <!-- Latest compiled and minified JavaScript --> <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+
+    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
+    <link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="/android-chrome-192x192.png" sizes="192x192">
+    <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+    <link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#5bbad5">
+    <meta name="msapplication-TileColor" content="#da532c">
+    <meta name="msapplication-TileImage" content="/mstile-144x144.png">
+    <meta name="theme-color" content="#ffffff">
+    <script>
+      function addOrder() {
+        var side = document.getElementById('Side').value;
+        var security = document.getElementById('Security').value;
+        var quantity = document.getElementById('Quantity').value;
+        var price = parseInt(100 * document.getElementById('Price').value);
+        $.ajax({
+          url: "http://andrewlei.org:8888/addorder",
+          type: "post",
+          datatype:"json",
+          data: {"Side": side, "Security": security, "Quantity": quantity, "Price": price},
+          success: function(response){
+            document.getElementById('Response').innerHTML = "<div class='alert alert-success alert-dismissible fade in' role=alert> <button type=button class=close data-dismiss=alert aria-label=Close><span aria-hidden=true>&times;</span></button>" + response + "</div>";
+          }
+        });
+      }
+
+      function getOrders() {
+        $.ajax({
+            url: "http://andrewlei.org:8888/orders",
+            type: "get",
+            datatype:"json",
+            success: function(response){
+                var data = JSON.parse(response);
+                var str = "";
+                for (var i = 0; i < data.length; i++) {
+                  str += '<option value="' + data[i] + '">' + data[i] + '</option>';
+                }
+                document.getElementById('OrderList').innerHTML = str;
+            }
+        });
+      }
+
+      function getOrder() {
+        $.ajax({
+            url: "http://andrewlei.org:8888/orders/" + document.getElementById("OrderList").value,
+            type: "get",
+            datatype:"json",
+            success: function(response){
+                var data = JSON.parse(response);
+                // var str = "";
+                // for (var i = 0; i < data.length; i++) {
+                //   str += '<option value="' + data[i] + '">' + data[i] + '</option>';
+                // }
+                document.getElementById('DisplaySecurity').innerHTML = data["Security"];
+                document.getElementById('DisplaySide').innerHTML = data["Side"];
+                document.getElementById('DisplayTime').innerHTML = new Date(parseInt(data["Time"].match(/\d+/g)[0]));
+                document.getElementById('DisplayQuantity').innerHTML = data["Quantity"];
+                document.getElementById('DisplayOutstanding').innerHTML = data["Outstanding"];
+                document.getElementById('DisplayPrice').innerHTML = parseFloat(data["Price"] / 100.0).toFixed(2);
+            }
+        });
+      }
+
+      function getTransactions() {
+        $.ajax({
+            url: "http://andrewlei.org:8888/transactions",
+            type: "get",
+            datatype:"json",
+            success: function(response){
+                var data = JSON.parse(response);
+                var str = "";
+                for (var i = 0; i < data.length; i++) {
+                  str += '<option value="' + data[i] + '">' + data[i] + '</option>';
+                }
+                document.getElementById('TransactionList').innerHTML = str;
+            }
+        });
+      }
+
+      function getTransaction() {
+        $.ajax({
+            url: "http://andrewlei.org:8888/transactions/" + document.getElementById("TransactionList").value,
+            type: "get",
+            datatype:"json",
+            success: function(response){
+                var data = JSON.parse(response);
+                // var str = "";
+                // for (var i = 0; i < data.length; i++) {
+                //   str += '<option value="' + data[i] + '">' + data[i] + '</option>';
+                // }
+                document.getElementById('TransactionSecurity').innerHTML = data["Security"];
+                document.getElementById('TransactionBuyId').innerHTML = data["BuyId"];
+                document.getElementById('TransactionSellId').innerHTML = data["SellId"];
+                document.getElementById('TransactionTime').innerHTML = new Date(parseInt(data["Time"].match(/\d+/g)[0]));
+                document.getElementById('TransactionQuantity').innerHTML = data["Quantity"];
+                document.getElementById('TransactionBuyPrice').innerHTML = parseFloat(data["BuyPrice"] / 100.0).toFixed(2);
+                document.getElementById('TransactionSellPrice').innerHTML = parseFloat(data["SellPrice"] / 100.0).toFixed(2);
+            }
+        });
+      }
+
+      function toggle() {
+        $('[href=#ViewOrders]').on('shown.bs.tab', function (e) {
+          getOrders();
+        });
+        $('[href=#ViewTransactions]').on('shown.bs.tab', function (e) {
+          getTransactions();
+        });
+      }
+    </script>
+  </head>
+  <body onload="toggle()">
+    <nav class="navbar navbar-default">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="http://www.andrewlei.org">Home</a>
+      </div>
+
+      <!-- Collect the nav links, forms, and other content for toggling -->
+      <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+        <ul class="nav navbar-nav">
+          <li><a href="about.html">About</a></li>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Software <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="plot.html">Finite Element Method Program</a></li>
+              <li><a href="quatdraw.html">Quaternions</a></li>
+              <li><a href="rsa.html">RSA Demonstration</a></li>
+              <li><a href="dualnumbers.html">Dual Numbers</a></li>
+              <li class='active'><a href="ordermatcher.html">Order Matcher Application</a></li>
+            </ul>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+
+    <div class="container container-fluid">
+      <center>
+        <h2>Order Matcher Application</h2>
+      </center>
+      The following is an order-matching application. Not a particularly mathematically interesting project, but
+      I did get the opportunity to work with a few neat technologies. I wrote the application in C#/Mono with the Nancy
+      framework, and MongoDB for the database, and had never touched C# prior to about six days ago. Not bad for a week's
+      work, I would say.
+      <br/><br/>
+      The application will take orders in the &lsquo;Add Order&rsquo; tab, where you enter in the name of the security,
+      select a side (buy or sell), a quantity, and a price. This information is then used to create a new order, which
+      is stored in the order database. As it's being stored in the database, the server checks to see if there are orders
+      of the opposite side with a suitable price (a lower sell price if the added order is buy and higher buy price if sell)
+      that have not been fulfilled yet. These are then used to create transactions which keep track of the IDs for the
+      buy and sell orders and their prices. You can check out the full list of orders in the &lsquo;View Orders&rsquo;
+      tab and the list of transactions in the &lsquo;View Transaction&rsquo; tab.
+      <br/><br/>
+      Check out <a href="https://github.com/andrew-lei/projects/tree/master/">my GitHub</a> for the source code.
+      <br/><br/>
+      <div>
+        <!-- Nav tabs -->
+        <ul class="nav nav-tabs" role="tablist">
+          <li role="presentation" class="active"><a href="#AddOrder" aria-controls="AddOrder" role="tab" data-toggle="tab">Add Order</a></li>
+          <li role="presentation"><a href="#ViewOrders" aria-controls="ViewOrders" role="tab" data-toggle="tab">View Orders</a></li>
+          <li role="presentation"><a href="#ViewTransactions" aria-controls="ViewTransactions" role="tab" data-toggle="tab">View Transactions</a></li>
+        </ul>
+  <!-- Tab panes -->
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane active" id="AddOrder">
+            <center>
+              <div class="col-sm-10" name="Response" id="Response"></div>
+              <form class="form-horizontal" method="post" action="javascript:;" onsubmit="addOrder()">
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <select class="btn btn-default dropdown-toggle" name="Side" id="Side">
+                        <option value="buy">Buy</option>
+                        <option value="sell">Sell</option>
+                      </select>
+                    </span>
+                    <input class="form-control" name="Security" placeholder="Security" id="Security">
+                  </div>
+                </div>
+                <div class="col-sm-10">
+                  <input class="form-control" name="Quantity" placeholder="Quantity" id="Quantity">
+                </div>
+                <div class="col-sm-10">
+                  <div class="input-group">
+                    <span class="input-group-addon">$</span>
+                    <input type="text" class="form-control" name="Price" placeholder="Price" id="Price">
+                  </div>
+                </div>
+                <div class="col-sm-10">
+                  <button class="btn btn-default">Add</button>
+                </div>
+              </form>
+            </center>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="ViewOrders">
+            <!-- this part allows viewing of the orders. on tab load this will
+            create a list of the OrderIds-->
+            <div class="row">
+              <div class="col-xs-8 col-sm-6">
+                <select class="form-control" size="10" name="OrderList" id="OrderList" onchange="getOrder()">
+                </select>
+              </div>
+              <div class="col-xs-8 col-sm-6">
+                <div class="alert alert-info" role="alert">
+                  <h4><b>Security: <span id="DisplaySecurity"></span></b></h4>
+                  Side: <span id="DisplaySide"></span><br/>
+                  Time: <span id="DisplayTime"></span><br/>
+                  Quantity: <span id="DisplayQuantity"></span><br/>
+                  Outstanding: <span id="DisplayOutstanding"></span><br/>
+                  Price: <span id="DisplayPrice"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div role="tabpanel" class="tab-pane" id="ViewTransactions">
+            <div class="row">
+              <div class="col-xs-8 col-sm-6">
+                <select class="form-control" size="10" name="TransactionList" id="TransactionList" onchange="getTransaction()">
+                </select>
+              </div>
+              <div class="col-xs-8 col-sm-6">
+                <div class="alert alert-info" role="alert">
+                  <h4><b>Security: <span id="TransactionSecurity"></span></b></h4>
+                  Buy ID: <span id="TransactionBuyId"></span><br/>
+                  Sell ID: <span id="TransactionSellId"></span><br/>
+                  Time: <span id="TransactionTime"></span><br/>
+                  Quantity: <span id="TransactionQuantity"></span><br/>
+                  Buy Price: <span id="TransactionBuyPrice"></span><br/>
+                  Sell Price: <span id="TransactionSellPrice"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </body>
+</html>

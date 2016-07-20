@@ -1,0 +1,4 @@
+To compile, run the following, where * is replaced by whichever version of Mono System.Web.Extensions.dll gets installed into.
+You'll need to use Nuget for Nancy, Nancy.Hosting.Self, Mono.Posix, and MongoDB.
+
+mcs -r:./Nancy.dll -r:./Mono.Posix.dll -r:./Nancy.Hosting.Self.dll -r:./MongoDB.Driver.dll -r:./MongoDB.Bson.dll -r:/usr/lib/mono/*/System.Web.Extensions.dll OrderMatcher.cs
