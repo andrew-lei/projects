@@ -174,12 +174,14 @@
       work, I would say.
       <br/><br/>
       The application will take orders in the &lsquo;Add Order&rsquo; tab, where you enter in the name of the security,
-      select a side (buy or sell), a quantity, and a price. This information is then used to create a new order, which
-      is stored in the order database. As it's being stored in the database, the server checks to see if there are orders
-      of the opposite side with a suitable price (a lower sell price if the added order is buy and higher buy price if sell)
-      that have not been fulfilled yet. These are then used to create transactions which keep track of the IDs for the
-      buy and sell orders and their prices. You can check out the full list of orders in the &lsquo;View Orders&rsquo;
-      tab and the list of transactions in the &lsquo;View Transaction&rsquo; tab.
+      select a side (buy or sell), a quantity, and a price. The security is checked to against a list of
+      <a href="http://www.batstrading.com/market_data/symbol_listing/csv/">existing securities</a> (link will automatically
+      download a csv table), and, if it exists, the information is then used to create a new order, which is stored in the
+      order database. As it's being stored in the database, the server checks to see if there are orders of the opposite side
+      with a suitable price (a lower sell price if the added order is buy and higher buy price if sell) that have not been
+      fulfilled yet. These are then used to create transactions which keep track of the IDs for the buy and sell orders and
+      their prices. You can check out the full list of orders in the &lsquo;View Orders&rsquo; tab and the list of transactions
+      in the &lsquo;View Transaction&rsquo; tab.
       <br/><br/>
       Check out <a href="https://github.com/andrew-lei/projects/tree/master/ordermatcher">my GitHub</a> for the source code.
       <br/><br/>

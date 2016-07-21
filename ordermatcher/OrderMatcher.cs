@@ -15,6 +15,11 @@ using Nancy.ModelBinding;
 
 
 namespace OrderMatcher {
+  public class Security {
+    public ObjectId Id { get; set; }
+    public string Symbol { get; set; }
+  }
+
   public class Order {
     public ObjectId Id { get; set; }
 
@@ -24,21 +29,7 @@ namespace OrderMatcher {
         return security;
       }
       set {
-        if( Regex.IsMatch(value, @"^[a-zA-Z]+$") ) {
-          if( value.Length > 5 ) {
-            throw new ArgumentException("value", "must have five letters or fewer");
-          }
-          security = value.ToUpper();
-        }
-        else if( Regex.IsMatch(value, @"^[a-zA-Z.]+$") ) {
-          if( value.Length > 6 ) {
-            throw new ArgumentException("value", "must have five letters or fewer");
-          }
-          security = value.ToUpper();
-        }
-        else {
-          throw new ArgumentException("value", "has invalid characters");
-        }
+        security = value.ToUpper();
       }
     }
 
@@ -153,6 +144,12 @@ namespace OrderMatcher {
     public MongoCollection<Transaction> Transactions {
       get {
         return db.GetCollection<Transaction>("Transaction");
+      }
+    }
+
+    public MongoCollection<Security> Securities {
+      get {
+        return db.GetCollection<Security>("Security");
       }
     }
 
@@ -308,8 +305,13 @@ namespace OrderMatcher {
       Post["/addorder"] = _ => {
         Order neworder = this.Bind<Order>();
         neworder.Outstanding = neworder.Quantity;
-        ctx.AddOrder(neworder);
-        return "Order successfully added! Id " + neworder.Id;
+        if( ctx.Securities.Find(Query<Security>.EQ(p => p.Symbol, neworder.Security.ToUpper())).ToList().Count() > 0 ) {
+          ctx.AddOrder(neworder);
+          return "Order successfully added! Id " + neworder.Id;
+        }
+        else {
+          throw new ArgumentException(neworder.Security, "is not in the Securities database.");
+        }
       };
     }
   }
