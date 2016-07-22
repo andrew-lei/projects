@@ -47,7 +47,23 @@
 
       function getOrders() {
         $.ajax({
-            url: "http://andrewlei.org:8888/orders",
+            url: "http://andrewlei.org:8888/ordersec",
+            type: "get",
+            datatype:"json",
+            success: function(response){
+                var data = JSON.parse(response);
+                var str = "";
+                for (var i = 0; i < data.length; i++) {
+                  str += '<option value="' + data[i] + '">' + data[i] + '</option>';
+                }
+                document.getElementById('OrderSecList').innerHTML = str;
+            }
+        });
+      }
+
+      function getSecOrders() {
+        $.ajax({
+            url: "http://andrewlei.org:8888/ordersec/"  + document.getElementById("OrderSecList").value,
             type: "get",
             datatype:"json",
             success: function(response){
@@ -84,7 +100,23 @@
 
       function getTransactions() {
         $.ajax({
-            url: "http://andrewlei.org:8888/transactions",
+            url: "http://andrewlei.org:8888/transactionsec",
+            type: "get",
+            datatype:"json",
+            success: function(response){
+                var data = JSON.parse(response);
+                var str = "";
+                for (var i = 0; i < data.length; i++) {
+                  str += '<option value="' + data[i] + '">' + data[i] + '</option>';
+                }
+                document.getElementById('TransactionSecList').innerHTML = str;
+            }
+        });
+      }
+
+      function getSecTransactions() {
+        $.ajax({
+            url: "http://andrewlei.org:8888/transactionsec/"  + document.getElementById("TransactionSecList").value,
             type: "get",
             datatype:"json",
             success: function(response){
@@ -228,11 +260,15 @@
             <!-- this part allows viewing of the orders. on tab load this will
             create a list of the OrderIds-->
             <div class="row">
-              <div class="col-xs-8 col-sm-6">
+              <div class="col-xs-8 col-sm-4">
+                <select class="form-control" size="10" name="OrderSecList" id="OrderSecList" onchange="getSecOrders()">
+                </select>
+              </div>
+              <div class="col-xs-8 col-sm-4">
                 <select class="form-control" size="10" name="OrderList" id="OrderList" onchange="getOrder()">
                 </select>
               </div>
-              <div class="col-xs-8 col-sm-6">
+              <div class="col-xs-8 col-sm-4">
                 <div class="alert alert-info" role="alert">
                   <h4><b>Security: <span id="DisplaySecurity"></span></b></h4>
                   Side: <span id="DisplaySide"></span><br/>
@@ -246,11 +282,15 @@
           </div>
           <div role="tabpanel" class="tab-pane" id="ViewTransactions">
             <div class="row">
-              <div class="col-xs-8 col-sm-6">
+              <div class="col-xs-8 col-sm-4">
+                <select class="form-control" size="10" name="TransactionSecList" id="TransactionSecList" onchange="getSecTransactions()">
+                </select>
+              </div>
+              <div class="col-xs-8 col-sm-4">
                 <select class="form-control" size="10" name="TransactionList" id="TransactionList" onchange="getTransaction()">
                 </select>
               </div>
-              <div class="col-xs-8 col-sm-6">
+              <div class="col-xs-8 col-sm-4">
                 <div class="alert alert-info" role="alert">
                   <h4><b>Security: <span id="TransactionSecurity"></span></b></h4>
                   Buy ID: <span id="TransactionBuyId"></span><br/>

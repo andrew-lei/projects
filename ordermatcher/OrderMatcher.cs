@@ -284,6 +284,26 @@ namespace OrderMatcher {
         First().ToJson();
     }
 
+    string GetOrders(Context ctx, string sec) {
+      return new JavaScriptSerializer().Serialize(ctx.
+        Orders.
+        Distinct("_id", Query<Order>.EQ(p => p.Security, sec)).
+        ToList().
+        Select(i => i.ToString()).
+        OrderBy(x => x) ).
+        ToString();
+    }
+
+    string GetTransactions(Context ctx, string sec) {
+      return new JavaScriptSerializer().Serialize(ctx.
+        Transactions.
+        Distinct("_id", Query<Order>.EQ(p => p.Security, sec)).
+        ToList().
+        Select(i => i.ToString()).
+        OrderBy(x => x) ).
+        ToString();
+    }
+
     public OrderModule() {
       //To provide 'Access-Control-Allow-Origin' header
       this.EnableCors();
@@ -295,6 +315,14 @@ namespace OrderMatcher {
         ToList() ).
         ToString();
       Get["/orders/{id}"] = _ => FindOrder(ctx, _.id);
+      Get["/ordersec"] = _ => new JavaScriptSerializer().Serialize(ctx.
+        Orders.
+        Distinct("Security").
+        ToList().
+        Select(i => i.ToString()).
+        OrderBy(i => i)).
+        ToString();
+      Get["/ordersec/{security}"] = _ => GetOrders(ctx, _.security);
       Get["/transactions"] = _ => new JavaScriptSerializer().Serialize(ctx.
         Transactions.Distinct("_id").
         ToList().
@@ -302,6 +330,14 @@ namespace OrderMatcher {
         ToList() ).
         ToString();
       Get["/transactions/{id}"] = _ => FindTransaction(ctx, _.id);
+      Get["/transactionsec"] = _ => new JavaScriptSerializer().Serialize(ctx.
+        Transactions.
+        Distinct("Security").
+        ToList().
+        Select(i => i.ToString()).
+        OrderBy(i => i)).
+        ToString();
+      Get["/transactionsec/{security}"] = _ => GetTransactions(ctx, _.security);
       Post["/addorder"] = _ => {
         Order neworder = this.Bind<Order>();
         neworder.Outstanding = neworder.Quantity;
