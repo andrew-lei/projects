@@ -1,11 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom";
-import { FormControl, Col, Row, Tabs, Tab } from "react-bootstrap";
-var $ = require('jquery');
+import { Tabs, Tab } from "react-bootstrap";
 
+import AddOrderPanel from "./AddOrderPanel";
 import OrdersPanel from "./OrdersPanel";
+import TransactionsPanel from "./TransactionsPanel";
+import Header from "./Header"
 
-class Layout extends React.Component {
+class OrderApplication extends React.Component {
   constructor() {
     super();
     this.state = {
@@ -14,9 +16,11 @@ class Layout extends React.Component {
   }
 
   handleSelect(key) {
-    console.log('selected ' + key);
     if(key == 2) {
-      OrdersPanel.getOrders();
+      this.refs['orders'].getOrders();
+    }
+    else if (key == 3) {
+      this.refs['transactions'].getTransactions();
     }
     this.setState({key});
   }
@@ -24,16 +28,22 @@ class Layout extends React.Component {
   render() {
     return (
       <Tabs activeKey={this.state.key} onSelect={this.handleSelect.bind(this)} id="AppPanel">
-        <Tab eventKey={1} title="Tab 1">
-          <OrdersPanel/>
+        <Tab eventKey={1} title="Add Order">
+          <AddOrderPanel/>
         </Tab>
-        <Tab eventKey={2} title="Tab 2">
-          <OrdersPanel/>
+        <Tab eventKey={2} title="View Orders">
+          <OrdersPanel ref='orders'/>
+        </Tab>
+        <Tab eventKey={3} title="View Transactions">
+          <TransactionsPanel ref='transactions'/>
         </Tab>
       </Tabs>
     );
   }
 }
 
+// const header = document.getElementById('header');
+// ReactDOM.render(<Header/>, header);
+
 const app = document.getElementById('app');
-ReactDOM.render(<Layout/>, app);
+ReactDOM.render(<OrderApplication/>, app);

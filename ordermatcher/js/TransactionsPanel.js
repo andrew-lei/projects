@@ -5,10 +5,10 @@ var $ = require('jquery');
 
 import ListEl from "./ListEl";
 
-export default class OrdersPanel extends React.Component {
+export default class TransactionsPanel extends React.Component {
   constructor() {
     super();
-    this.getOrders();
+    this.getTransactions();
     this.state = {
       list: [],
       secs: [],
@@ -16,10 +16,10 @@ export default class OrdersPanel extends React.Component {
     };
   }
 
-  getOrders() {
+  getTransactions() {
     var context = this;
     $.ajax({
-        url: "http://andrewlei.org:8888/ordersec",
+        url: "http://andrewlei.org:8888/transactionsec",
         type: "get",
         datatype:"json",
         success: function(response){
@@ -29,10 +29,10 @@ export default class OrdersPanel extends React.Component {
     });
   }
 
-  getSecOrders(security) {
+  getSecTransactions(security) {
     var context = this;
     $.ajax({
-        url: "http://andrewlei.org:8888/ordersec/"  + security.target.value,
+        url: "http://andrewlei.org:8888/transactionsec/"  + security.target.value,
         type: "get",
         datatype:"json",
         success: function(response){
@@ -42,21 +42,22 @@ export default class OrdersPanel extends React.Component {
     });
   }
 
-  getOrder(order) {
+  getTransaction(order) {
     var context = this;
     $.ajax({
-        url: "http://andrewlei.org:8888/orders/" + order.target.value,
+        url: "http://andrewlei.org:8888/transactions/" + order.target.value,
         type: "get",
         datatype:"json",
         success: function(response){
             var data = JSON.parse(response);
             context.setState({sec: {
               security: data["Security"],
-              side: data["Side"],
+              buyid: data["BuyId"],
+              sellid: data["SellId"],
               time: (new Date(parseInt(data["Time"].match(/\d+/g)[0])).toString()),
               quantity: data["Quantity"],
-              outstanding: data["Outstanding"],
-              price: parseFloat(data["Price"] / 100.0).toFixed(2)
+              buyprice: parseFloat(data["BuyPrice"] / 100.0).toFixed(2),
+              sellprice: parseFloat(data["SellPrice"] / 100.0).toFixed(2)
             }});
         }
     });
@@ -66,23 +67,24 @@ export default class OrdersPanel extends React.Component {
     return (
       <Row className="show-grid">
         <Col xs={8} sm={4}>
-          <FormControl componentClass="select" size="10" onChange={this.getSecOrders.bind(this)}>
+          <FormControl componentClass="select" size="10" onChange={this.getSecTransactions.bind(this)}>
             {this.state.list}
           </FormControl>
         </Col>
         <Col xs={8} sm={4}>
-          <FormControl componentClass="select" size="10" onChange={this.getOrder.bind(this)}>
+          <FormControl componentClass="select" size="10" onChange={this.getTransaction.bind(this)}>
             {this.state.secs}
           </FormControl>
         </Col>
         <Col xs={8} sm={4}>
           <Alert>
             <h4><b>Security: {this.state.sec.security}</b></h4>
-            Side: {this.state.sec.side}<br/>
+            Buy ID: {this.state.sec.buyid}<br/>
+            Sell ID: {this.state.sec.sellid}<br/>
             Time: {this.state.sec.time}<br/>
             Quantity: {this.state.sec.quantity}<br/>
-            Outstanding: {this.state.sec.outstanding}<br/>
-            Price: {this.state.sec.price}
+            Buy Price: {this.state.sec.buyprice}<br/>
+            Buy Price: {this.state.sec.sellprice}
           </Alert>
         </Col>
       </Row>
