@@ -15,11 +15,14 @@ using Nancy.ModelBinding;
 
 
 namespace OrderMatcher {
+  //security, e.g., GOOG
   public class Security {
     public ObjectId Id { get; set; }
     public string Symbol { get; set; }
   }
 
+  //Order details are what security it is, buy or sell, quantity price, and
+  //when order was made. Outstanding quantity says how much is remaining.
   public class Order {
     public ObjectId Id { get; set; }
 
@@ -61,8 +64,9 @@ namespace OrderMatcher {
 
     public int? Outstanding { get; set; }
 
-    //decimal doesn't work because MongoDB does not have decimals only floating-point
-    //this will then be cast to string which is unsuitable for comparisons and sorting
+    //Decimal doesn't work because MongoDB does not have decimals, only floating-point.
+    //This will then be cast to string which is unsuitable for comparisons and sorting.
+    //For this reason I use integers, with the input multiplied by a hundred
     private int price;
     public int Price {
       get {
@@ -96,11 +100,15 @@ namespace OrderMatcher {
     }
   }
 
+  //Transaction details include name of security, the IDs of the
+  //buy and sell order, the quantity filled by the order, the
+  //buying and selling price, and the time of transaction
   public class Transaction {
     public ObjectId Id { get; set; }
     public string Security { get; set; }
     public ObjectId BuyId { get; set; }
     public ObjectId SellId { get; set; }
+    //nullable because Order.Outstanding is nullable
     public int? Quantity { get; set; }
     public int BuyPrice { get; set; }
     public int SellPrice { get; set; }
@@ -154,11 +162,19 @@ namespace OrderMatcher {
     }
 
     public void AddOrder(Order myorder) {
-      //save at beginning to initialise an Id
+      //save at beginning to initialise an Id for myorder
       //save at end to update Outstanding
       this.Orders.Save(myorder);
       List<Order> matches;
+
+      //If the order is to buy
       if(string.Equals(myorder.Side,"buy")) {
+        //find orders matching the following criteria:
+        //1) same security
+        //2) side sell
+        //3) price <= price of myorder.Price
+        //4) quantity > 0
+        //and then sort so that price is ascending; the cheapest get chosen first
         matches = this.Orders.
           Find( Query.And(
             Query<Order>.EQ(p => p.Security, myorder.Security),
@@ -169,13 +185,23 @@ namespace OrderMatcher {
           ToList();
         int total = matches.Count();
         int index = 0;
+
+        //lesser is to keep track of which outstanding amount there is less of
         int? lesser;
         Transaction mytransaction;
+
+        //for each order in our matches, or at least until the order we're
+        //adding is filled
         while( myorder.Outstanding > 0 && index < total ) {
+          //minimum of myorder.Outstanding and Outstanding of match
           lesser = (myorder.Outstanding < matches[index].Outstanding) ?
             myorder.Outstanding : matches[index].Outstanding;
+
+          //subtract lesser from both
           myorder.Outstanding -= lesser;
           matches[index].Outstanding -= lesser;
+
+          //create new transaction
           mytransaction = new Transaction {
             Security = myorder.Security,
             BuyId = myorder.Id,
@@ -184,28 +210,49 @@ namespace OrderMatcher {
             BuyPrice = myorder.Price,
             SellPrice = matches[index].Price
           };
+
+          //update match and increment index
           this.Orders.Save(matches[index++]);
+
+          //add transaction
           this.Transactions.Save(mytransaction);
         }
       }
+      //the order is to sell
       else {
+        //find orders matching the following criteria:
+        //1) same security
+        //2) side buy
+        //3) price >= price of myorder.Price
+        //4) quantity > 0
+        //and then sort so that price is descending; the highest bidders get chosen first
         matches = this.Orders.
           Find( Query.And(
             Query<Order>.EQ(p => p.Security, myorder.Security),
             Query<Order>.EQ(p => p.Side, "buy"),
             Query<Order>.GTE(p => p.Price, myorder.Price),
             Query<Order>.GT(p => p.Outstanding, 0)) ).
-          SetSortOrder(SortBy<Order>.Ascending(p => p.Price)).
+          SetSortOrder(SortBy<Order>.Descending(p => p.Price)).
           ToList();
         int total = matches.Count();
         int index = 0;
+
+        //lesser is to keep track of which outstanding amount there is less of
         int? lesser;
         Transaction mytransaction;
+
+        //for each order in our matches, or at least until the order we're
+        //adding is filled
         while( myorder.Outstanding > 0 && index < total ) {
+          //minimum of myorder.Outstanding and Outstanding of match
           lesser = (myorder.Outstanding < matches[index].Outstanding) ?
             myorder.Outstanding : matches[index].Outstanding;
+
+          //subtract lesser from both
           myorder.Outstanding -= lesser;
           matches[index].Outstanding -= lesser;
+
+          //create new transaction
           mytransaction = new Transaction {
             Security = myorder.Security,
             BuyId = matches[index].Id,
@@ -214,10 +261,16 @@ namespace OrderMatcher {
             BuyPrice = matches[index].Price,
             SellPrice = myorder.Price
           };
+
+          //update match and increment index
           this.Orders.Save(matches[index++]);
+
+          //add transaction
           this.Transactions.Save(mytransaction);
         }
       }
+
+      //update order; the outstanding amount may have changed
       this.Orders.Save(myorder);
     }
   }
@@ -261,15 +314,14 @@ namespace OrderMatcher {
     }
   }
 
-  public class Testing {
-    public string Entry;
-  }
-
   public class OrderModule : NancyModule {
+    //this returns an ID
     ObjectId RetId(Order myorder) {
       return myorder.Id;
     }
 
+    //This finds an order with given ID
+    //Returns order details in JSON
     string FindOrder(Context ctx, string Id) {
       return ctx.
         Orders.
@@ -277,6 +329,8 @@ namespace OrderMatcher {
         First().ToJson();
     }
 
+    //This finds a transaction with given ID
+    //Returns transaction details in JSON
     string FindTransaction(Context ctx, string Id) {
       return ctx.
         Transactions.
@@ -284,6 +338,7 @@ namespace OrderMatcher {
         First().ToJson();
     }
 
+    //This gets all of the order IDs involving a given security
     string GetOrders(Context ctx, string sec) {
       return new JavaScriptSerializer().Serialize(ctx.
         Orders.
@@ -294,6 +349,7 @@ namespace OrderMatcher {
         ToString();
     }
 
+    //This gets all of the transaction IDs involving a given security
     string GetTransactions(Context ctx, string sec) {
       return new JavaScriptSerializer().Serialize(ctx.
         Transactions.
@@ -308,13 +364,19 @@ namespace OrderMatcher {
       //To provide 'Access-Control-Allow-Origin' header
       this.EnableCors();
       Context ctx = new Context();
+
+      //list of orders
       Get["/orders"] = _ => new JavaScriptSerializer().Serialize(ctx.
         Orders.Distinct("_id").
         ToList().
         Select(i => i.ToString()).
         ToList() ).
         ToString();
+
+      //the order with given ID
       Get["/orders/{id}"] = _ => FindOrder(ctx, _.id);
+
+      //list of securities ordered
       Get["/ordersec"] = _ => new JavaScriptSerializer().Serialize(ctx.
         Orders.
         Distinct("Security").
@@ -322,14 +384,22 @@ namespace OrderMatcher {
         Select(i => i.ToString()).
         OrderBy(i => i)).
         ToString();
+
+      //gets all of the order IDs involving a given security
       Get["/ordersec/{security}"] = _ => GetOrders(ctx, _.security);
+
+      //list of transactions
       Get["/transactions"] = _ => new JavaScriptSerializer().Serialize(ctx.
         Transactions.Distinct("_id").
         ToList().
         Select(i => i.ToString()).
         ToList() ).
         ToString();
+
+      //transaction with a given ID
       Get["/transactions/{id}"] = _ => FindTransaction(ctx, _.id);
+
+      //list of securities transacted
       Get["/transactionsec"] = _ => new JavaScriptSerializer().Serialize(ctx.
         Transactions.
         Distinct("Security").
@@ -337,14 +407,26 @@ namespace OrderMatcher {
         Select(i => i.ToString()).
         OrderBy(i => i)).
         ToString();
+
+      //gets all of the transaction IDs involving a given security
       Get["/transactionsec/{security}"] = _ => GetTransactions(ctx, _.security);
+
+      //add an order to the database
+      //fulfil some orders
       Post["/addorder"] = _ => {
+
+        //create new order with front-end data
         Order neworder = this.Bind<Order>();
+
+        //Outstanding initialised with full quantity
         neworder.Outstanding = neworder.Quantity;
+
+        //only do add if its security shows up in the database
         if( ctx.Securities.Find(Query<Security>.EQ(p => p.Symbol, neworder.Security.ToUpper())).ToList().Count() > 0 ) {
           ctx.AddOrder(neworder);
           return "Order successfully added! Id " + neworder.Id;
         }
+        //otherwise don't add, throw an exception
         else {
           throw new ArgumentException(neworder.Security, "is not in the Securities database.");
         }
