@@ -82,15 +82,23 @@
 
     <!-- <paper-date-picker></paper-date-picker> -->
 
-    <paper-button raised onclick="actions.open()">dialog with actions</paper-button>
-    <paper-dialog id="actions">
-      <paper-date-picker id="picker" min-date="11/05/16" date="[[date]]"></paper-date-picker>
-    <div class="buttons">
-    <paper-button>More Info...</paper-button>
-    <paper-button dialog-dismiss>Decline</paper-button>
-    <paper-button dialog-confirm autofocus>Accept</paper-button>
-  </div>
-</paper-dialog>
+    <paper-button raised onclick="start.open()">dialog with actions</paper-button>
+    <paper-dialog id="start">
+      <paper-date-picker id="picker" min-date="11/05/16" date="{{date1}}"></paper-date-picker>
+      <div class="buttons">
+        <paper-button>More Info...</paper-button>
+        <paper-button dialog-dismiss>Decline</paper-button>
+        <paper-button dialog-confirm autofocus onclick="end.open()">Accept</paper-button>
+      </div>
+    </paper-dialog>
+    <paper-dialog id="end">
+      <paper-date-picker id="picker" min-date="{{date1}}" date="{{date2}}"></paper-date-picker>
+      <div class="buttons">
+        <paper-button>More Info...</paper-button>
+        <paper-button dialog-dismiss>Decline</paper-button>
+        <paper-button dialog-confirm autofocus onclick="">Accept</paper-button>
+      </div>
+    </paper-dialog>
   </template>
   <script>
     Polymer({
@@ -110,7 +118,13 @@
 
       toEditableId: function(noteId) {
         return this.notesPath + '/' + noteId;
-      }
+      },
+
+      get hospitalsPath() {
+        return '/hospitals/';
+      },
+
+
     });
   </script>
 </dom-module>
