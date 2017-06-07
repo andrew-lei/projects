@@ -1,4 +1,5 @@
 module EulerEE exposing (..)
+-- see andrewlei.org/euleree.html
 
 import Html exposing (Attribute, br, div, text, input)
 import Html.Attributes as H
